@@ -1,7 +1,11 @@
 package org.alikwon.sampleboardstudy.repository;
 
+import org.alikwon.sampleboardstudy.dto.BoardDTO;
+import org.alikwon.sampleboardstudy.dto.PageRequestDTO;
+import org.alikwon.sampleboardstudy.dto.PageResultDTO;
 import org.alikwon.sampleboardstudy.entity.Board;
 import org.alikwon.sampleboardstudy.entity.Member;
+import org.alikwon.sampleboardstudy.service.BoardService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +25,9 @@ public class BoardRepositoryTests {
 
     @Autowired
     BoardRepository boardRepository;
+
+    @Autowired
+    BoardService boardService;
 
     @Test
     public void insertBoard() {
@@ -78,5 +85,52 @@ public class BoardRepositoryTests {
         Object result = boardRepository.getBoardByBno(100L);
         Object[] arr = (Object[]) result;
         System.out.println(Arrays.toString(arr));
+    }
+
+    @Test
+    public void testRegister() {
+        BoardDTO dto = BoardDTO.builder()
+                .title("Test Register")
+                .content("Test ..........")
+                .writerEmail("user1@test.com")
+                .build();
+        Long bno  = boardService.register(dto);
+    }
+
+    @Test
+    public void testGetList() {
+        PageRequestDTO requestDTO = new PageRequestDTO();
+
+        PageResultDTO<BoardDTO, Object[]> resultDTO = boardService.getList(requestDTO);
+
+        for (BoardDTO dto : resultDTO.getDtoList()) {
+            System.out.println(dto);
+        }
+    }
+
+    @Test
+    public void testGet() {
+        Long bno = 100L;
+
+        BoardDTO dto = boardService.get(bno);
+
+        System.out.println(dto);
+    }
+
+    @Test
+    public void testDelete() {
+        Long bno = 100L;
+
+        boardService.removeWithReplies(bno);
+    }
+
+    @Test
+    public void testModify() {
+        BoardDTO dto = BoardDTO.builder()
+                .bno(1L)
+                .title("제목 변경할거임")
+                .content("내용도 변경할거임")
+                .build();
+        boardService.modify(dto);
     }
 }

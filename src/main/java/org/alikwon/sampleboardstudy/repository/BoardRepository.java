@@ -5,6 +5,7 @@ import org.alikwon.sampleboardstudy.entity.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -35,4 +36,5 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
             "LEFT JOIN Reply r ON r.board = b " +
             "WHERE b.bno = :bno")
     Object getBoardByBno(@Param("bno") Long bno);
+
 }
