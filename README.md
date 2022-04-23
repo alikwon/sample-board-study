@@ -420,3 +420,142 @@
             "WHERE b.bno = :bno")
     Object getBoardByBno(@Param("bno") Long bno);
     ```
+---
+# JPQL로 검색
+
+- FK를 이용해서 `@ManyToOne` 과 같은 연관관계를 작성했을 때 가장 어려운 작업은 검색에 필요한 JPQL을 구성하는 것.
+- 여러 엔티티 타입을 JPQL로 직접 처리하는 경우, Object[] 타입으로 나오기 때문에 작성방법 자체가 복잡함
+- 그렇지만 어떤 상황에서도 사용할 수 있는 강력한 JPQL을 구성할 수 있는 방식
+- `build.gradle` 에 Querydsl 설정
+
+## Repository 확장하기
+
+- Spring Data JPA 의 Repository 를 확장하기 위한 단계
+  1. 쿼리 메서드나 `@Query` 등으로 처리할 수 없는 기능은 별도의 인터페이스로 설계
+  2. 별도의 인터페이스에 대한 구현 클래스를 작성. `QueryRepositorySupport` 라는 클래스를 부모 클래스로 사용
+  3. 구현 클래스의 인터페이스 기능을 Q도메인 클레스와 JPQLQuery를 이용하여 구현
+
+### QuerydslRepositorySupport 동작 확인
+
+- `SearchBoardRepository` interface 생성
+- `SearchBoardRepository` interface를 구현하는 `SearchBoardRepositoryImpl`  생성
+  - 소스코드
+
+      ```java
+      import lombok.extern.log4j.Log4j2;
+      import org.alikwon.sampleboardstudy.entity.Board;
+      import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
+      
+      @Log4j2
+      public class SearchBoardRepositoryImpl 
+                                      extends QuerydslRepositorySupport 
+                                      implements SearchBoardRepository {
+      
+          public SearchBoardRepositoryImpl(){
+              super(Board.class);
+          }
+      
+          @Override
+          public Board search1() {
+              log.info("########## search1 ##########");
+              return null;
+          }
+      }
+      ```
+
+  - `QuerydslRepositorySupport` 를 상속해야함
+    - 생성자가 존재하므로 `super()`를 이용하여 호출 → 도메인 클래스 지정
+- `BoardRepository` 에 `SearchBoardRepository` 인터페이스를 상속함.
+  - 코드
+
+      ```java
+      public interface BoardRepository 
+                                  extends JpaRepository<Board, Long>, SearchBoardRepository {
+              ... 생략 ...
+      }
+      ```
+
+
+### JPQLQuery 객체
+
+- `Querydsl` 라이브러리 내에는 `JPQLQuery` 라는 인터페이스를 활용
+  - `SearchBoardRepositoryImpl` 의 search1 메서드 수정
+
+      ```java
+      @Override
+      public Board search1() {
+          log.info("########## search1 ##########");
+      
+          QBoard board = QBoard.board;
+      
+          JPQLQuery<Board> jpqlQuery = from(board);
+      
+          jpqlQuery.select(board).where(board.bno.eq(1L));
+      
+          log.info("-----------------------------------");
+          log.info(jpqlQuery);
+          log.info("-----------------------------------");
+      
+          List<Board> result = jpqlQuery.fetch();
+          return null;
+      }
+      ```
+
+
+### JPQLQuery의 `leftJoin()` / `on()`
+
+- JPQLQuery 로 다른 엔티티의 조인을 처리하기위해 `leftJoin()` , `rightJoin()` 등을 이용
+- 필요시 `on()` 이용
+
+    ```java
+    QBoard board = QBoard.board;
+    QReply reply = QReply.reply;
+    
+    JPQLQuery<Board> jpqlQuery = from(board);
+    
+    jpqlQuery.leftJoin(reply).on(reply.board.eq(board));
+    ```
+
+
+### Tuple 객체
+
+```java
+@Override
+public Board search1() {
+    log.info("########## search1 ##########");
+
+    QBoard board = QBoard.board;
+    QReply reply = QReply.reply;
+    QMember member = QMember.member;
+
+    JPQLQuery<Board> jpqlQuery = from(board);
+    jpqlQuery.leftJoin(member).on(board.writer.eq(member));
+    jpqlQuery.leftJoin(reply).on(reply.board.eq(board));
+
+    JPQLQuery<Tuple> tuple = jpqlQuery.select(board, member.email, reply.count());
+    tuple.groupBy(board);
+
+    log.info("-----------------------------------");
+    log.info("\n"+ tuple);
+    log.info("-----------------------------------");
+
+    List<Tuple> result = tuple.fetch();
+    log.info(result);
+    return null;
+}
+```
+
+- 정해진 엔티티 객체 단위가 아니라 각각의 데이터를 추출 하는 경우 **Tuple** 객체를 이용한다.
+
+## JPQLQuery로 Page<Object[]> 처리
+
+- `searchList()` 설계
+
+    ```java
+    public interface SearchBoardRepository {
+        Board search1();
+        Page<Object[]> searchPage(String type, String keyword, Pageable pageable);
+    }
+    ```
+---
+...ing

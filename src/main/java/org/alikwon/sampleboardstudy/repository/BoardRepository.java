@@ -2,6 +2,7 @@ package org.alikwon.sampleboardstudy.repository;
 
 import org.alikwon.sampleboardstudy.entity.Board;
 import org.alikwon.sampleboardstudy.entity.Member;
+import org.alikwon.sampleboardstudy.repository.search.SearchBoardRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,7 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface BoardRepository extends JpaRepository<Board, Long> {
+public interface BoardRepository extends JpaRepository<Board, Long>, SearchBoardRepository {
     @Query("select b, w " +
             "from Board b left join b.writer w " +
             "where b.bno = :bno")
