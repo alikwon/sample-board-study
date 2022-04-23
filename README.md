@@ -22,7 +22,7 @@
 
 - ERD 다이어그램
 
-  ![img](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/d4fcad81-5d82-4f08-8e61-8ad037659b16/Untitled.png)
+  ![img](https://s3.us-west-2.amazonaws.com/secure.notion-static.com/d4fcad81-5d82-4f08-8e61-8ad037659b16/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20220423%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20220423T074429Z&X-Amz-Expires=86400&X-Amz-Signature=3ef12bcd5c85953ca0351d471e303c62a09726c90ac26295a9dfe6823fac5714&X-Amz-SignedHeaders=host&response-content-disposition=filename%20%3D%22Untitled.png%22&x-id=GetObject)
 
 - 관계형 DB에서는 PK와 FK만으로 표현되었던 관계가 객체지향으로 옮겨지면 다양한 선택지가 존재하게 된다.
   - 회원 엔티티가 게시물 엔티티를 참조하게 해야하는가?
