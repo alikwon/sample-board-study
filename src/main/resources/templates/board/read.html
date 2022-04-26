@@ -2,7 +2,10 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <th:block th:replace="~{/layout/layout :: setContent(~{this :: content})}">
     <th:block th:fragment="content">
-        <h1 class="mt-4">Board Read Page</h1>
+        <style>
+            .card-body:hover{ background-color: rgba(234, 234, 234, 0.13) }
+        </style>
+        <h1 class="mt-4">Board Read Page2</h1>
         <div class="form-group">
             <label>Bno</label>
             <input type="text" class="form-control" name="bno" th:value="${dto.bno}" readonly >
@@ -35,6 +38,173 @@
         <a class="btn btn-info" th:href="@{/board/list(page=${requestDTO.page}, type=${requestDTO.type}, keyword=${requestDTO.keyword})}">
             List
         </a>
+
+        <!-- Modal -->
+        <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="staticBackdropLabel">댓글 등록</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3 row">
+                            <label for="replyText" class="col-sm-2 col-form-label">Text</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="replyText" name="replyText" placeholder="Reply Text.....">
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label for="replyer" class="col-sm-2 col-form-label">Replyer</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="replyer" name="replyer" placeholder="Replyer">
+                                <input type="hidden" name="rno">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger replyRemove">Remove</button>
+                        <button type="button" class="btn btn-warning replyModify">Modify</button>
+                        <button type="button" class="btn btn-primary replySave">Save</button>
+                        <button type="button" class="btn btn-secondary replyClose" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <span type="button" style="display: none" class="badge bg-primary modalBtn" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+        </span>
+        <div>
+            <div class="mt-4">
+                <h5><span type="button" class="badge bg-primary addReply">
+                    Add Reply
+                </span></h5>
+                <h5><span type="button" class="badge bg-secondary replyCount">Reply Count [[${dto.replyCount}]]</span></h5>
+            </div>
+            <div class="list-group replyList">
+
+            </div>
+        </div>
+
+<script th:inline="javascript">
+    let bno = [[${dto.bno}]];
+
+    let listGroup = $('.replyList');
+
+    $('.replyCount').click(function () {
+        loadJSONData();
+    });
+
+    function formatTime(str) {
+        let date = new Date(str);
+        return date.getFullYear() + '-' +
+            (date.getMonth() + 1) + '-' +
+            date.getDate() + ' ' +
+            date.getHours() + ':' +
+            date.getMinutes();
+    }
+    function loadJSONData() {
+        $.getJSON('/replies/board/' + bno, function (arr) {
+            let html = '';
+            $.each(arr, function(i, reply){
+                html += '<div type="button" class="card-body" data-rno="' + reply.rno + '">                       ';
+                html += '<b>' + reply.rno + '</b>                                                   ';
+                html += '    <h5 class="card-title">' + reply.text + '</h5>                         ';
+                html += '    <h6 class="card-subtitle mb-2 text-muted">' + reply.replyer + '</h6>   ';
+                html += '    <p class="card-text">' + formatTime(reply.regDate) + '</p>             ';
+                html += '</div>                                                                     ';
+            });
+            listGroup.html(html);
+        });
+    }
+
+
+    const modal = $('.modal');
+
+    $('.addReply').click(function () {
+        $('input[name=replyText]').val('');
+        $('input[name=replyer]').val('');
+        $('.modal-footer .btn').hide();
+        $('.replySave, .replyClose').show();
+        $('.modalBtn').trigger('click');
+    });
+
+    $('.replySave').click(function () {
+        let reply = {
+            bno : bno,
+            text : $('input[name=replyText]').val(),
+            replyer : $('input[name=replyer]').val()
+        }
+
+        $.ajax({
+            url: '/replies',
+            method: 'post',
+            data: JSON.stringify(reply),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            success: function (data) {
+                console.log(data);
+                let newRno = parseInt(data);
+                alert(newRno + "번 댓글이 등록되었습니다.");
+                $('.replyClose').trigger('click');
+                loadJSONData();
+            }
+        });
+    });
+
+    $('.replyRemove').click(function () {
+       let rno =  $('input[name=rno]').val();
+       $.ajax({
+          url: '/replies/' + rno,
+          method: 'delete',
+          success: function (result) {
+              if(result === 'success'){
+                  alert('댓글이 삭제되었습니다.');
+                  $('.replyClose').trigger('click');
+                  loadJSONData();
+              }
+          }
+       });
+    });
+
+    $('.replyModify').click(function () {
+        let rno =  $('input[name=rno]').val();
+
+        let reply = {
+            bno : bno,
+            rno : rno,
+            text : $('input[name=replyText]').val(),
+            replyer : $('input[name=replyer]').val()
+        }
+
+        $.ajax({
+            url: '/replies/modify',
+            method: 'post',
+            data: JSON.stringify(reply),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            success: function (result) {
+                console.log(result);
+                if(result == 'success'){
+                    alert('댓글이 수정되었습니다.');
+                    $('.replyClose').trigger('click');
+                    loadJSONData();
+                }
+            }
+        });
+    });
+
+    listGroup.on('click', '.card-body', function(){
+       let rno = $(this).data('rno');
+       $('input[name=replyText]').val($(this).find('.card-title').text());
+       $('input[name=replyer]').val($(this).find('.card-subtitle').text());
+       $('input[name=rno]').val(rno);
+
+       $('.modal-footer .btn').hide();
+       $('.replyRemove, .replyModify').show();
+       $('.modalBtn').trigger('click');
+    });
+
+</script>
     </th:block>
 </th:block>
 </html>
